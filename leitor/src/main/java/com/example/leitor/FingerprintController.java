@@ -23,13 +23,13 @@ public class FingerprintController {
     private static class UserTemplate {
         private final Long userId;
         private final String userName;
-        private final String userRegistration;
+        private final String userStateRegistration;
         private final FingerprintTemplate template;
 
-        public UserTemplate(Long userId, String userName, String userRegistration, FingerprintTemplate template) {
+        public UserTemplate(Long userId, String userName, String userStateRegistration, FingerprintTemplate template) {
             this.userId = userId;
             this.userName = userName;
-            this.userRegistration = userRegistration;
+            this.userStateRegistration = userStateRegistration;
             this.template = template;
         }
 
@@ -41,8 +41,8 @@ public class FingerprintController {
             return userName;
         }
 
-        public String getUserRegistration() {
-            return userRegistration;
+        public String getUserStateRegistration() {
+            return userStateRegistration;
         }
 
         public FingerprintTemplate getTemplate() {
@@ -81,7 +81,7 @@ public class FingerprintController {
                     highestSimilarity,
                     bestMatch.getUserId(),
                     bestMatch.getUserName(),
-                    bestMatch.getUserRegistration()
+                    bestMatch.getUserStateRegistration()
                 );
             } else {
                 return new MatchResult(false, highestSimilarity, null, null, null);
@@ -96,7 +96,7 @@ public class FingerprintController {
         List<UserTemplate> templates = new ArrayList<>();
         
         try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
-            String sql = "SELECT id, name, registration, biometrics FROM users WHERE biometrics IS NOT NULL";
+            String sql = "SELECT id, name, state_registration, biometrics FROM users WHERE biometrics IS NOT NULL";
             
             try (Statement stmt = conn.createStatement();
                  ResultSet rs = stmt.executeQuery(sql)) {
@@ -104,14 +104,14 @@ public class FingerprintController {
                 while (rs.next()) {
                     Long userId = rs.getLong("id");
                     String userName = rs.getString("name");
-                    String userRegistration = rs.getString("registration");
+                    String userStateRegistration = rs.getString("state_registration");
                     String templateBase64 = rs.getString("biometrics");
                     
                     if (templateBase64 != null && !templateBase64.isEmpty()) {
                         try {
                             byte[] templateBytes = Base64.getDecoder().decode(templateBase64);
                             FingerprintTemplate template = new FingerprintTemplate(templateBytes);
-                            templates.add(new UserTemplate(userId, userName, userRegistration, template));
+                            templates.add(new UserTemplate(userId, userName, userStateRegistration, template));
                         } catch (Exception e) {
                             System.err.println("Erro ao processar template para usuário " + userId + ": " + e.getMessage());
                         }
